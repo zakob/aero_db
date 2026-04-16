@@ -2,7 +2,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files from frontend directory
 COPY frontend/package*.json ./
 
 # Install dependencies
@@ -11,14 +11,8 @@ RUN npm install
 # Copy frontend source code
 COPY frontend/ ./
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S react -u 1001 && \
-    chown -R react:nodejs /app
-USER react
-
 # Expose port
 EXPOSE 3000
 
-# Run development server
+# Run development server as root for development (simpler permissions)
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

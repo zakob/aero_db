@@ -59,18 +59,18 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: http://backend:8000/api
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     networks:
       - aero_network_dev
-    command: >
-      sh -c "cd /app/frontend &&
-             npm install &&
-             npm run dev -- --host 0.0.0.0"
+    stdin_open: true
+    tty: true
 
 volumes:
   postgres_data_dev:
