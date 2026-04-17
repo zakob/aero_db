@@ -1,1 +1,7 @@
 __pycache__
+dist/
+build/
+node_modules/
+logs/
+*.log
+.env
