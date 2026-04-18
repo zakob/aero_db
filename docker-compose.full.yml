@@ -3,6 +3,7 @@ version: '3.8'
 services:
   # PostgreSQL database
   postgres:
+    image: "aero_db_postgres:prod"
     build: database
     container_name: aero_db_postgres
     ports:
@@ -24,6 +25,7 @@ services:
 
   # FastAPI backend
   backend:
+    image: "aero_db_backend:prod"
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -53,6 +55,7 @@ services:
 
   # React frontend
   frontend:
+    image: "aero_db_frontend:prod"
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -61,17 +64,13 @@ services:
       - "3000:3000"
     environment:
       VITE_API_URL: http://localhost:8000/api
-    volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
+    # No volumes in production - using built image
     depends_on:
       - backend
     networks:
       - aero_network
-    command: >
-      sh -c "cd /app/frontend &&
-             npm install &&
-             npm run dev -- --host 0.0.0.0"
+    # In production, just run serve (already installed in Dockerfile)
+    command: ["serve", "-s", "dist", "-l", "3000"]
 
   # Nginx reverse proxy (optional)
   nginx:

@@ -3,6 +3,7 @@ version: '3.8'
 services:
   # PostgreSQL database
   postgres:
+    image: "aero_db_postgres:dev"
     build: database
     container_name: aero_db_postgres_dev
     ports:
@@ -23,6 +24,7 @@ services:
 
   # FastAPI backend (development mode)
   backend:
+    image: "aero_db_backend:dev"
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
@@ -52,6 +54,7 @@ services:
 
   # React frontend (development mode)
   frontend:
+    image: "aero_db_frontend:dev"
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev

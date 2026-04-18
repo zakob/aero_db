@@ -50,7 +50,7 @@ const VisualizationPage = () => {
   const [selectedObject, setSelectedObject] = useState('Крыло A')
   const [machRange, setMachRange] = useState([0.2, 1.2])
   const [alphaRange, setAlphaRange] = useState([-5, 20])
-  const [chartType, setChartType] = useState('mach')
+  const [_chartType, _setChartType] = useState('mach')
 
   const filteredMachData = machData.filter(
     d => d.mach >= machRange[0] && d.mach <= machRange[1]

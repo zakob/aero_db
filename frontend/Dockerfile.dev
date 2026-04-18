@@ -1,12 +1,12 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 # Copy package files from frontend directory
 COPY frontend/package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with clean cache
+RUN npm install && npm cache clean --force
 
 # Copy frontend source code
 COPY frontend/ ./
@@ -14,5 +14,5 @@ COPY frontend/ ./
 # Expose port
 EXPOSE 3000
 
-# Run development server as root for development (simpler permissions)
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Run development server as root for development (simpler permissions) with request logging
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--logLevel", "info", "--clearScreen", "false"]
