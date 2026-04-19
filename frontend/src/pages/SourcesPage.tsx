@@ -1,25 +1,59 @@
-import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, message, Card, Typography } from 'antd'
+import { useState, useEffect } from 'react'
+import { Table, Button, Space, Modal, Form, Input, message, Card, Typography, Spin } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
+import { sourcesService, Source, SourceCreate, SourceUpdate, SearchParams } from '../services/api'
 
 const { Title } = Typography
 const { TextArea } = Input
 
-// Mock data
-const mockSources = [
-  { id: 1, name: 'Аэродинамическая труба ЦАГИ', description: 'Основная аэродинамическая труба', remark: 'Высокоточные измерения' },
-  { id: 2, name: 'CFD расчеты ANSYS', description: 'Численное моделирование', remark: 'Турбулентная модель SST' },
-  { id: 3, name: 'Полетные испытания', description: 'Натурные испытания', remark: 'Самолет Ан-2' },
-  { id: 4, name: 'Ветровой туннель МАИ', description: 'Учебная установка', remark: 'Малые скорости' },
-  { id: 5, name: 'База данных NASA', description: 'Открытые данные', remark: 'Аэродинамические профили' }
-]
-
 const SourcesPage = () => {
-  const [sources, setSources] = useState(mockSources)
+  const [sources, setSources] = useState<Source[]>([])
+  const [loading, setLoading] = useState(true)
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const [editingSource, setEditingSource] = useState<any>(null)
+  const [editingSource, setEditingSource] = useState<Source | null>(null)
   const [form] = Form.useForm()
   const [searchText, setSearchText] = useState('')
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0
+  })
+
+  // Загрузка данных с API
+  const loadSources = async (page = 1, search = '') => {
+    console.log('loadSources called with page:', page, 'search:', search)
+    setLoading(true)
+    try {
+      const params: SearchParams = {
+        page,
+        page_size: pagination.pageSize,
+        search: search || undefined
+      }
+      console.log('API params:', params)
+      
+      const response = await sourcesService.getSources(params)
+      console.log('API response:', response)
+      // Защита от undefined
+      const items = Array.isArray(response.items) ? response.items : []
+      setSources(items)
+      setPagination(prev => ({
+        ...prev,
+        page,
+        total: response.total || 0
+      }))
+    } catch (error) {
+      console.error('Ошибка при загрузке источников:', error)
+      message.error('Не удалось загрузить источников данных')
+      setSources([]) // Устанавливаем пустой массив при ошибке
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Первоначальная загрузка
+  useEffect(() => {
+    loadSources()
+  }, [])
 
   const columns = [
     {
@@ -38,19 +72,21 @@ const SourcesPage = () => {
       title: 'Описание',
       dataIndex: 'description',
       key: 'description',
-      ellipsis: true
+      ellipsis: true,
+      render: (text: string) => text || '-'
     },
     {
       title: 'Заметка',
       dataIndex: 'remark',
       key: 'remark',
-      ellipsis: true
+      ellipsis: true,
+      render: (text: string) => text || '-'
     },
     {
       title: 'Действия',
       key: 'actions',
       width: 120,
-      render: (_: any, record: any) => (
+      render: (_: any, record: Source) => (
         <Space size="small">
           <Button
             type="text"
@@ -70,9 +106,9 @@ const SourcesPage = () => {
     }
   ]
 
-  const filteredSources = sources.filter(source =>
-    source.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    source.description.toLowerCase().includes(searchText.toLowerCase())
+  const filteredSources = (sources || []).filter(source =>
+    (source.name && source.name.toLowerCase().includes(searchText.toLowerCase())) ||
+    (source.description && source.description.toLowerCase().includes(searchText.toLowerCase()))
   )
 
   const handleAdd = () => {
@@ -81,51 +117,70 @@ const SourcesPage = () => {
     setIsModalVisible(true)
   }
 
-  const handleEdit = (source: any) => {
+  const handleEdit = (source: Source) => {
     setEditingSource(source)
     form.setFieldsValue(source)
     setIsModalVisible(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     Modal.confirm({
       title: 'Удалить источник?',
       content: 'Это действие нельзя отменить.',
       okText: 'Удалить',
       okType: 'danger',
       cancelText: 'Отмена',
-      onOk: () => {
-        setSources(sources.filter(source => source.id !== id))
-        message.success('Источник удален')
+      onOk: async () => {
+        try {
+          await sourcesService.deleteSource(id)
+          setSources(sources.filter(source => source.id !== id))
+          message.success('Источник удален')
+        } catch (error) {
+          console.error('Ошибка при удалении источника:', error)
+          message.error('Не удалось удалить источник')
+        }
       }
     })
   }
 
-  const handleModalOk = () => {
-    form.validateFields().then(values => {
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields()
+      console.log('Form values:', values)
+      
       if (editingSource) {
-        // Update existing source
-        setSources(sources.map(source => 
-          source.id === editingSource.id ? { ...source, ...values } : source
+        // Обновление существующего источника
+        console.log('Updating source:', editingSource.id, values)
+        const updatedSource = await sourcesService.updateSource(editingSource.id, values as SourceUpdate)
+        console.log('Update response:', updatedSource)
+        setSources(sources.map(source =>
+          source.id === editingSource.id ? updatedSource : source
         ))
         message.success('Источник обновлен')
       } else {
-        // Add new source
-        const newSource = {
-          id: Math.max(...sources.map(s => s.id)) + 1,
-          ...values
-        }
-        setSources([...sources, newSource])
+        // Добавление нового источника
+        console.log('Creating source with data:', values)
+        const newSource = await sourcesService.createSource(values as SourceCreate)
+        console.log('Create response:', newSource)
+        setSources([newSource, ...sources])
         message.success('Источник добавлен')
       }
+      
       setIsModalVisible(false)
       form.resetFields()
-    })
+    } catch (error) {
+      console.error('Ошибка при сохранении источника:', error)
+      message.error('Не удалось сохранить источник')
+    }
   }
 
   const handleModalCancel = () => {
     setIsModalVisible(false)
     form.resetFields()
+  }
+
+  const handleTableChange = (pagination: any) => {
+    loadSources(pagination.current)
   }
 
   return (
@@ -138,7 +193,10 @@ const SourcesPage = () => {
             placeholder="Поиск источников..."
             prefix={<SearchOutlined />}
             value={searchText}
-            onChange={e => setSearchText(e.target.value)}
+            onChange={e => {
+              setSearchText(e.target.value)
+              // Можно добавить debounce для поиска по API
+            }}
             style={{ width: 300 }}
           />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
@@ -147,13 +205,23 @@ const SourcesPage = () => {
         </Space>
       </Card>
 
-      <Table
-        columns={columns}
-        dataSource={filteredSources}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-        bordered
-      />
+      <Spin spinning={loading}>
+        <Table
+          columns={columns}
+          dataSource={filteredSources}
+          rowKey="id"
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} из ${total} источников`
+          }}
+          onChange={handleTableChange}
+          bordered
+        />
+      </Spin>
 
       <Modal
         title={editingSource ? 'Редактировать источник' : 'Добавить источник'}
@@ -161,6 +229,7 @@ const SourcesPage = () => {
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         width={600}
+        confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
           <Form.Item

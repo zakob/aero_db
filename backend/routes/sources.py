@@ -6,7 +6,7 @@ from backend.database.database import db
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
-@router.get("/", response_model=PaginatedResponse)
+@router.get("/", response_model=PaginatedResponse[SourceResponse])
 async def get_sources(params: SearchParams = Depends()):
     """Get paginated list of sources"""
     offset = (params.page - 1) * params.page_size
@@ -29,8 +29,10 @@ async def get_sources(params: SearchParams = Depends()):
         query += " LIMIT $1 OFFSET $2"
         items = await db.fetch(query, params.page_size, offset)
     
-    return PaginatedResponse(
-        items=[SourceResponse(**dict(item)) for item in items],
+    responses = [SourceResponse(**dict(item)) for item in items]
+    
+    return PaginatedResponse[SourceResponse](
+        items=responses,
         total=total,
         page=params.page,
         page_size=params.page_size,

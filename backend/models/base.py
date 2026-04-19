@@ -7,8 +7,12 @@ class BaseResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-class PaginatedResponse(BaseModel):
-    items: List[BaseResponse]
+from typing import TypeVar, Generic
+
+T = TypeVar('T')
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
     total: int
     page: int
     page_size: int

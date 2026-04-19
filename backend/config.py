@@ -19,8 +19,8 @@ class Settings:
     APP_VERSION: str = "1.0.0"
     API_PREFIX: str = "/api"
     
-    # CORS settings
-    CORS_ORIGINS: list = ["http://localhost:3000", "http://localhost:5173"]
+    # CORS settings - read from environment variable or use defaults
+    CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")

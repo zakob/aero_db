@@ -1,73 +1,53 @@
-import { useState } from 'react'
-import { Table, Card, Typography, Tag, Space, Input, Select, Button } from 'antd'
+import { useState, useEffect } from 'react'
+import { Table, Card, Typography, Tag, Space, Input, Select, Button, Spin } from 'antd'
 import { SearchOutlined, FilterOutlined } from '@ant-design/icons'
+import { experimentsService, ExperimentStart, SearchParams } from '../services/api'
 
 const { Title } = Typography
 const { Option } = Select
 
-// Mock data
-const mockExperiments = [
-  { 
-    id: 1, 
-    name: 'Эксперимент #1', 
-    object: 'Крыло A', 
-    source: 'Аэродинамическая труба',
-    mach: 0.8,
-    reynolds: 1.2e6,
-    alpha: 5.0,
-    date: '2024-03-15',
-    status: 'completed'
-  },
-  { 
-    id: 2, 
-    name: 'Эксперимент #2', 
-    object: 'Фюзеляж B', 
-    source: 'CFD расчет',
-    mach: 0.6,
-    reynolds: 0.8e6,
-    alpha: 3.0,
-    date: '2024-03-14',
-    status: 'completed'
-  },
-  { 
-    id: 3, 
-    name: 'Эксперимент #3', 
-    object: 'Крыло A', 
-    source: 'Полетные испытания',
-    mach: 1.2,
-    reynolds: 2.5e6,
-    alpha: 2.0,
-    date: '2024-03-13',
-    status: 'processing'
-  },
-  { 
-    id: 4, 
-    name: 'Эксперимент #4', 
-    object: 'Хвостовое оперение', 
-    source: 'Аэродинамическая труба',
-    mach: 0.4,
-    reynolds: 0.5e6,
-    alpha: 8.0,
-    date: '2024-03-12',
-    status: 'completed'
-  },
-  { 
-    id: 5, 
-    name: 'Эксперимент #5', 
-    object: 'Крыло B', 
-    source: 'CFD расчет',
-    mach: 0.9,
-    reynolds: 1.8e6,
-    alpha: 4.0,
-    date: '2024-03-11',
-    status: 'completed'
-  }
-]
-
 const ExperimentsPage = () => {
+  const [experiments, setExperiments] = useState<ExperimentStart[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [objectFilter, setObjectFilter] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0
+  })
+
+  // Загрузка данных с API
+  const loadExperiments = async (page = 1, search = '') => {
+    setLoading(true)
+    try {
+      const params: SearchParams = {
+        page,
+        page_size: pagination.pageSize,
+        search: search || undefined,
+        sort_by: 'id',
+        sort_order: 'desc'
+      }
+      
+      const response = await experimentsService.getExperiments(params)
+      setExperiments(response.items)
+      setPagination(prev => ({
+        ...prev,
+        page,
+        total: response.total
+      }))
+    } catch (error) {
+      console.error('Ошибка при загрузке экспериментов:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Первоначальная загрузка
+  useEffect(() => {
+    loadExperiments()
+  }, [])
 
   const columns = [
     {
@@ -85,7 +65,7 @@ const ExperimentsPage = () => {
     },
     {
       title: 'Объект',
-      dataIndex: 'object',
+      dataIndex: 'object_name',
       key: 'object',
       width: 150,
       filters: [
@@ -94,22 +74,24 @@ const ExperimentsPage = () => {
         { text: 'Фюзеляж B', value: 'Фюзеляж B' },
         { text: 'Хвостовое оперение', value: 'Хвостовое оперение' }
       ],
-      onFilter: (value: any, record: any) => record.object === value
+      onFilter: (value: any, record: any) => record.object_name === value,
+      render: (text: string) => text || 'Не указан'
     },
     {
       title: 'Источник',
-      dataIndex: 'source',
+      dataIndex: 'source_name',
       key: 'source',
-      width: 180
+      width: 180,
+      render: (text: string) => text || 'Не указан'
     },
     {
       title: 'Параметры',
       key: 'parameters',
-      render: (_: any, record: any) => (
+      render: (_: any, record: ExperimentStart) => (
         <div>
-          <div>Mach: <strong>{record.mach}</strong></div>
-          <div>Re: <strong>{record.reynolds.toExponential(1)}</strong></div>
-          <div>α: <strong>{record.alpha}°</strong></div>
+          <div>Mach: <strong>{record.mach || '—'}</strong></div>
+          <div>Re: <strong>{record.reynolds ? record.reynolds.toExponential(1) : '—'}</strong></div>
+          <div>α: <strong>{record.alpha ? `${record.alpha}°` : '—'}</strong></div>
         </div>
       )
     },
@@ -119,6 +101,7 @@ const ExperimentsPage = () => {
       key: 'status',
       width: 120,
       render: (status: string) => {
+        if (!status) return <Tag>Не указан</Tag>
         const color = status === 'completed' ? 'green' : 'orange'
         const text = status === 'completed' ? 'Завершен' : 'В обработке'
         return <Tag color={color}>{text}</Tag>
@@ -134,7 +117,8 @@ const ExperimentsPage = () => {
       dataIndex: 'date',
       key: 'date',
       width: 120,
-      sorter: (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      sorter: (a: any, b: any) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime(),
+      render: (date: string) => date || '—'
     },
     {
       title: 'Действия',
@@ -148,16 +132,32 @@ const ExperimentsPage = () => {
     }
   ]
 
-  const filteredExperiments = mockExperiments.filter(exp => {
-    const matchesSearch = exp.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                         exp.object.toLowerCase().includes(searchText.toLowerCase())
+  // Фильтрация на клиенте (можно переделать на серверную фильтрацию)
+  const filteredExperiments = experiments.filter(exp => {
+    const matchesSearch = exp.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+                         exp.object_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+                         exp.source_name?.toLowerCase().includes(searchText.toLowerCase())
     const matchesStatus = !statusFilter || exp.status === statusFilter
-    const matchesObject = !objectFilter || exp.object === objectFilter
+    const matchesObject = !objectFilter || exp.object_name === objectFilter
     
     return matchesSearch && matchesStatus && matchesObject
   })
 
-  const uniqueObjects = Array.from(new Set(mockExperiments.map(exp => exp.object)))
+  const uniqueObjects = Array.from(new Set(experiments
+    .map(exp => exp.object_name)
+    .filter(Boolean)
+  ))
+
+  const handleTableChange = (pagination: any, filters: any, sorter: any) => {
+    // Здесь можно добавить серверную сортировку и фильтрацию
+    if (pagination.current !== pagination.page) {
+      loadExperiments(pagination.current)
+    }
+  }
+
+  const handleSearch = () => {
+    loadExperiments(1, searchText)
+  }
 
   return (
     <div>
@@ -171,6 +171,7 @@ const ExperimentsPage = () => {
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
+              onPressEnter={handleSearch}
               style={{ width: 250 }}
             />
             
@@ -195,8 +196,8 @@ const ExperimentsPage = () => {
               ))}
             </Select>
             
-            <Button icon={<FilterOutlined />}>
-              Фильтры
+            <Button icon={<FilterOutlined />} onClick={handleSearch}>
+              Поиск
             </Button>
           </Space>
           
@@ -207,51 +208,72 @@ const ExperimentsPage = () => {
         </Space>
       </Card>
 
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={filteredExperiments}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          bordered
-          summary={() => (
-            <Table.Summary>
-              <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={3}>
-                  <strong>Всего экспериментов:</strong>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1}>
-                  <strong>{filteredExperiments.length}</strong>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={2}>
-                  <strong>Завершено:</strong>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={3}>
-                  <Tag color="green">
-                    {filteredExperiments.filter(e => e.status === 'completed').length}
-                  </Tag>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            </Table.Summary>
-          )}
-        />
-      </Card>
+      <Spin spinning={loading}>
+        <Card>
+          <Table
+            columns={columns}
+            dataSource={filteredExperiments}
+            rowKey="id"
+            pagination={{
+              current: pagination.page,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50', '100'],
+              showTotal: (total, range) => `${range[0]}-${range[1]} из ${total} экспериментов`
+            }}
+            onChange={handleTableChange}
+            bordered
+            summary={() => (
+              <Table.Summary>
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0} colSpan={3}>
+                    <strong>Всего экспериментов:</strong>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1}>
+                    <strong>{filteredExperiments.length}</strong>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2}>
+                    <strong>Завершено:</strong>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={3}>
+                    <Tag color="green">
+                      {filteredExperiments.filter(e => e.status === 'completed').length}
+                    </Tag>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            )}
+          />
+        </Card>
+      </Spin>
 
       <Card title="Статистика экспериментов" style={{ marginTop: 16 }}>
         <Space size="large">
           <div>
+            <div style={{ fontSize: 12, color: '#666' }}>Всего экспериментов</div>
+            <div style={{ fontSize: 24, fontWeight: 'bold' }}>
+              {experiments.length}
+            </div>
+          </div>
+          
+          <div>
             <div style={{ fontSize: 12, color: '#666' }}>Среднее число Маха</div>
             <div style={{ fontSize: 24, fontWeight: 'bold' }}>
-              {(
-                mockExperiments.reduce((sum, exp) => sum + exp.mach, 0) / mockExperiments.length
-              ).toFixed(2)}
+              {experiments.length > 0 
+                ? (experiments.reduce((sum, exp) => sum + (exp.mach || 0), 0) / experiments.length).toFixed(2)
+                : '0.00'
+              }
             </div>
           </div>
           
           <div>
             <div style={{ fontSize: 12, color: '#666' }}>Диапазон углов атаки</div>
             <div style={{ fontSize: 24, fontWeight: 'bold' }}>
-              {Math.min(...mockExperiments.map(e => e.alpha))}° - {Math.max(...mockExperiments.map(e => e.alpha))}°
+              {experiments.length > 0
+                ? `${Math.min(...experiments.map(e => e.alpha || 0))}° - ${Math.max(...experiments.map(e => e.alpha || 0))}°`
+                : '—'
+              }
             </div>
           </div>
           
@@ -265,7 +287,7 @@ const ExperimentsPage = () => {
           <div>
             <div style={{ fontSize: 12, color: '#666' }}>Источников данных</div>
             <div style={{ fontSize: 24, fontWeight: 'bold' }}>
-              {Array.from(new Set(mockExperiments.map(exp => exp.source))).length}
+              {Array.from(new Set(experiments.map(exp => exp.source_name).filter(Boolean))).length}
             </div>
           </div>
         </Space>

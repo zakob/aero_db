@@ -53,11 +53,7 @@ const Sidebar = () => {
         background: '#fff',
         borderRight: '1px solid #f0f0f0',
         overflow: 'auto',
-        height: '100vh',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0
+        height: '100vh'
       }}
     >
       <div style={{ padding: '24px 16px', textAlign: 'center' }}>
@@ -75,9 +71,9 @@ const Sidebar = () => {
         style={{ borderRight: 0 }}
       />
       
-      <div style={{ padding: '16px', position: 'absolute', bottom: 0, width: '100%' }}>
-        <div style={{ 
-          background: '#f6ffed', 
+      <div style={{ padding: '16px', marginTop: 'auto' }}>
+        <div style={{
+          background: '#f6ffed',
           border: '1px solid #b7eb8f',
           borderRadius: 6,
           padding: 12,

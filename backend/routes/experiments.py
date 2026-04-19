@@ -12,13 +12,13 @@ from backend.database.database import db
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
 # Start (Experiment) endpoints
-@router.get("/starts", response_model=PaginatedResponse)
+@router.get("/starts", response_model=PaginatedResponse[StartResponse])
 async def get_starts(params: SearchParams = Depends()):
     """Get paginated list of experiments (starts)"""
     offset = (params.page - 1) * params.page_size
     
     query = """
-        SELECT s.*, 
+        SELECT s.*,
                src.name as source_name,
                obj.name as object_name,
                geo.name as geometry_name,
@@ -34,8 +34,8 @@ async def get_starts(params: SearchParams = Depends()):
     
     if params.search:
         where_clause = """
-            WHERE src.name ILIKE $1 
-               OR obj.name ILIKE $1 
+            WHERE src.name ILIKE $1
+               OR obj.name ILIKE $1
                OR geo.name ILIKE $1
                OR rpt.name ILIKE $1
         """
@@ -51,7 +51,7 @@ async def get_starts(params: SearchParams = Depends()):
         query += " LIMIT $1 OFFSET $2"
         items = await db.fetch(query, params.page_size, offset)
     
-    return PaginatedResponse(
+    return PaginatedResponse[StartResponse](
         items=[StartResponse(**dict(item)) for item in items],
         total=total,
         page=params.page,

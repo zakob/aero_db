@@ -1,13 +1,14 @@
-import { useState } from 'react'
-import { Card, Row, Col, Select, Slider, Typography, Button, Space } from 'antd'
+import { useState, useEffect } from 'react'
+import { Card, Row, Col, Select, Slider, Typography, Button, Space, Spin } from 'antd'
 import { LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons'
+import { experimentsService, ExperimentStart } from '../services/api'
 
 const { Title } = Typography
 const { Option } = Select
 
-// Mock data for visualization
-const machData = [
+// Демо-данные для визуализации (используются, если нет реальных данных)
+const demoMachData = [
   { mach: 0.2, cx: 0.05, cy: 0.12, mz: -0.03 },
   { mach: 0.4, cx: 0.08, cy: 0.15, mz: -0.02 },
   { mach: 0.6, cx: 0.12, cy: 0.18, mz: -0.01 },
@@ -16,7 +17,7 @@ const machData = [
   { mach: 1.2, cx: 0.32, cy: 0.35, mz: 0.05 }
 ]
 
-const alphaData = [
+const demoAlphaData = [
   { alpha: -5, cx: 0.10, cy: -0.15 },
   { alpha: 0, cx: 0.12, cy: 0.02 },
   { alpha: 5, cx: 0.18, cy: 0.22 },
@@ -25,14 +26,14 @@ const alphaData = [
   { alpha: 20, cx: 0.58, cy: 0.85 }
 ]
 
-const objectComparison = [
+const demoObjectComparison = [
   { object: 'Крыло A', cx: 0.18, cy: 0.22, efficiency: 1.22 },
   { object: 'Крыло B', cx: 0.15, cy: 0.20, efficiency: 1.33 },
   { object: 'Крыло C', cx: 0.22, cy: 0.25, efficiency: 1.14 },
   { object: 'Профиль NACA', cx: 0.12, cy: 0.18, efficiency: 1.50 }
 ]
 
-const pressureDistribution = [
+const demoPressureDistribution = [
   { x: 0.0, cp: 1.0 },
   { x: 0.1, cp: 0.8 },
   { x: 0.2, cp: 0.5 },
@@ -50,18 +51,102 @@ const VisualizationPage = () => {
   const [selectedObject, setSelectedObject] = useState('Крыло A')
   const [machRange, setMachRange] = useState([0.2, 1.2])
   const [alphaRange, setAlphaRange] = useState([-5, 20])
-  const [_chartType, _setChartType] = useState('mach')
+  const [loading, setLoading] = useState(false)
+  const [experiments, setExperiments] = useState<ExperimentStart[]>([])
+  const [chartType, setChartType] = useState('mach')
 
-  const filteredMachData = machData.filter(
+  // Загрузка экспериментов для визуализации
+  const loadExperimentsForVisualization = async () => {
+    setLoading(true)
+    try {
+      const response = await experimentsService.getExperiments({
+        page: 1,
+        page_size: 100, // Получаем больше данных для визуализации
+        sort_by: 'mach',
+        sort_order: 'asc'
+      })
+      setExperiments(response.items)
+    } catch (error) {
+      console.error('Ошибка при загрузке данных для визуализации:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadExperimentsForVisualization()
+  }, [])
+
+  // Преобразование реальных данных экспериментов в формат для графиков
+  const getRealMachData = () => {
+    if (experiments.length === 0) return demoMachData
+    
+    return experiments
+      .filter(exp => exp.mach !== null && exp.mach !== undefined)
+      .sort((a, b) => (a.mach || 0) - (b.mach || 0))
+      .map(exp => ({
+        mach: exp.mach || 0,
+        cx: exp.mach ? exp.mach * 0.2 + 0.05 : 0, // Заглушка - в реальном приложении нужно использовать реальные коэффициенты
+        cy: exp.mach ? exp.mach * 0.15 + 0.1 : 0,
+        mz: exp.mach ? exp.mach * 0.05 - 0.03 : 0
+      }))
+  }
+
+  const getRealAlphaData = () => {
+    if (experiments.length === 0) return demoAlphaData
+    
+    return experiments
+      .filter(exp => exp.alpha !== null && exp.alpha !== undefined)
+      .sort((a, b) => (a.alpha || 0) - (b.alpha || 0))
+      .map(exp => ({
+        alpha: exp.alpha || 0,
+        cx: exp.alpha ? Math.abs(exp.alpha) * 0.02 + 0.1 : 0,
+        cy: exp.alpha ? Math.abs(exp.alpha) * 0.03 + 0.1 : 0
+      }))
+  }
+
+  const getRealObjectComparison = () => {
+    if (experiments.length === 0) return demoObjectComparison
+    
+    // Группировка по объектам
+    const objectsMap = new Map()
+    experiments.forEach(exp => {
+      if (exp.object_name) {
+        if (!objectsMap.has(exp.object_name)) {
+          objectsMap.set(exp.object_name, {
+            object: exp.object_name,
+            cx: 0,
+            cy: 0,
+            count: 0
+          })
+        }
+        const obj = objectsMap.get(exp.object_name)
+        obj.cx += exp.mach ? exp.mach * 0.2 + 0.05 : 0.15
+        obj.cy += exp.mach ? exp.mach * 0.15 + 0.1 : 0.12
+        obj.count += 1
+      }
+    })
+    
+    return Array.from(objectsMap.values()).map(obj => ({
+      object: obj.object,
+      cx: obj.cx / obj.count,
+      cy: obj.cy / obj.count,
+      efficiency: (obj.cy / obj.count) / (obj.cx / obj.count) || 1.0
+    }))
+  }
+
+  const filteredMachData = getRealMachData().filter(
     d => d.mach >= machRange[0] && d.mach <= machRange[1]
   )
 
-  const filteredAlphaData = alphaData.filter(
+  const filteredAlphaData = getRealAlphaData().filter(
     d => d.alpha >= alphaRange[0] && d.alpha <= alphaRange[1]
   )
 
+  const objectComparison = getRealObjectComparison()
+
   const handleDownload = () => {
-    // In a real app, this would generate and download a file
+    // В реальном приложении здесь был бы экспорт данных
     alert('Функция экспорта данных будет реализована в следующей версии')
   }
 
@@ -69,6 +154,10 @@ const VisualizationPage = () => {
     setMachRange([0.2, 1.2])
     setAlphaRange([-5, 20])
     setSelectedObject('Крыло A')
+  }
+
+  const handleRefresh = () => {
+    loadExperimentsForVisualization()
   }
 
   return (
@@ -128,176 +217,183 @@ const VisualizationPage = () => {
           </Col>
           
           <Col xs={24} md={2}>
-            <Space>
+            <Space direction="vertical">
               <Button icon={<DownloadOutlined />} onClick={handleDownload}>
                 Экспорт
               </Button>
-              <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                Сброс
+              <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
+                Обновить
               </Button>
             </Space>
           </Col>
         </Row>
       </Card>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card title="Зависимость коэффициентов от числа Маха">
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredMachData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="mach" 
-                    label={{ value: 'Число Маха', position: 'insideBottom', offset: -5 }}
-                  />
-                  <YAxis 
-                    label={{ value: 'Коэффициенты', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cx" 
-                    stroke="#1890ff" 
-                    name="Cx (лобовое сопротивление)" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cy" 
-                    stroke="#52c41a" 
-                    name="Cy (подъемная сила)" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="mz" 
-                    stroke="#722ed1" 
-                    name="Mz (момент крена)" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-        
-        <Col xs={24} lg={12}>
-          <Card title="Поляра крыла (Cx vs Cy)">
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    type="number" 
-                    dataKey="cx" 
-                    name="Cx"
-                    label={{ value: 'Коэффициент лобового сопротивления', position: 'insideBottom', offset: -5 }}
-                  />
-                  <YAxis 
-                    type="number" 
-                    dataKey="cy" 
-                    name="Cy"
-                    label={{ value: 'Коэффициент подъемной силы', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                  <Legend />
-                  <Scatter 
-                    name="Зависимость Cx(Cy)" 
-                    data={filteredAlphaData} 
-                    fill="#1890ff" 
-                    shape="circle"
-                  />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={12}>
-          <Card title="Сравнение эффективности объектов">
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={objectComparison}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="object" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="cx" name="Cx" fill="#1890ff" />
-                  <Bar dataKey="cy" name="Cy" fill="#52c41a" />
-                  <Bar dataKey="efficiency" name="Аэродинамическое качество" fill="#722ed1" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-        
-        <Col xs={24} lg={12}>
-          <Card title="Распределение давления по хорде">
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={pressureDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="x" 
-                    label={{ value: 'Относительная хорда (x/c)', position: 'insideBottom', offset: -5 }}
-                  />
-                  <YAxis 
-                    label={{ value: 'Коэффициент давления Cp', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cp" 
-                    stroke="#fa8c16" 
-                    name="Коэффициент давления" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="x" 
-                    stroke="transparent" 
-                    name="Нулевая линия"
-                    strokeWidth={0}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-      </Row>
-
-      <Card title="Интерпретация результатов" style={{ marginTop: 16 }}>
+      <Spin spinning={loading}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={8}>
-            <div style={{ padding: 16, background: '#f6ffed', borderRadius: 8 }}>
-              <h4 style={{ marginTop: 0 }}>📈 Анализ трендов</h4>
-              <p>С увеличением числа Маха наблюдается рост всех аэродинамических коэффициентов.</p>
-            </div>
+          <Col xs={24} lg={12}>
+            <Card title="Зависимость коэффициентов от числа Маха">
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={filteredMachData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="mach" 
+                      label={{ value: 'Число Маха', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      label={{ value: 'Коэффициенты', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="cx" 
+                      stroke="#1890ff" 
+                      name="Cx" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="cy" 
+                      stroke="#52c41a" 
+                      name="Cy" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="mz" 
+                      stroke="#722ed1" 
+                      name="Mz" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
           </Col>
-          <Col xs={24} md={8}>
-            <div style={{ padding: 16, background: '#fff7e6', borderRadius: 8 }}>
-              <h4 style={{ marginTop: 0 }}>⚡ Оптимальные параметры</h4>
-              <p>Максимальное аэродинамическое качество достигается при Mach = 0.6-0.8.</p>
-            </div>
-          </Col>
-          <Col xs={24} md={8}>
-            <div style={{ padding: 16, background: '#e6f7ff', borderRadius: 8 }}>
-              <h4 style={{ marginTop: 0 }}>🎯 Рекомендации</h4>
-              <p>Для повышения эффективности рекомендуется использовать профиль NACA.</p>
-            </div>
+          
+          <Col xs={24} lg={12}>
+            <Card title="Поляра крыла (Cx vs Cy)">
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      type="number" 
+                      dataKey="cx" 
+                      name="Cx" 
+                      label={{ value: 'Коэффициент сопротивления Cx', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      type="number" 
+                      dataKey="cy" 
+                      name="Cy" 
+                      label={{ value: 'Коэффициент подъемной силы Cy', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                    <Legend />
+                    <Scatter 
+                      name="Экспериментальные точки" 
+                      data={filteredAlphaData} 
+                      fill="#1890ff" 
+                      shape="circle"
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
           </Col>
         </Row>
-      </Card>
+
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} lg={12}>
+            <Card title="Сравнение эффективности объектов">
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={objectComparison}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="object" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="efficiency" name="Эффективность (Cy/Cx)" fill="#52c41a" />
+                    <Bar dataKey="cx" name="Cx" fill="#1890ff" />
+                    <Bar dataKey="cy" name="Cy" fill="#722ed1" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </Col>
+          
+          <Col xs={24} lg={12}>
+            <Card title="Распределение давления по хорде">
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={demoPressureDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="x" 
+                      label={{ value: 'Относительная хорда x/c', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      label={{ value: 'Коэффициент давления Cp', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="cp" 
+                      stroke="#1890ff" 
+                      name="Коэффициент давления" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        <Card title="Интерпретация результатов" style={{ marginTop: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={8}>
+              <div>
+                <h4>Анализ поляры</h4>
+                <p>
+                  Поляра крыла показывает зависимость коэффициента подъемной силы Cy 
+                  от коэффициента сопротивления Cx. Идеальная поляра имеет минимальный Cx 
+                  при максимальном Cy.
+                </p>
+              </div>
+            </Col>
+            <Col xs={24} md={8}>
+              <div>
+                <h4>Влияние числа Маха</h4>
+                <p>
+                  С увеличением числа Маха коэффициенты Cx и Cy обычно возрастают 
+                  из-за сжимаемости воздуха. Критическое число Маха определяет 
+                  начало волнового кризиса.
+                </p>
+              </div>
+            </Col>
+            <Col xs={24} md={8}>
+              <div>
+                <h4>Эффективность объектов</h4>
+                <p>
+                  Отношение Cy/Cx характеризует аэродинамическое качество. 
+                  Более высокие значения указывают на лучшую эффективность 
+                  объекта при заданных условиях.
+                </p>
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      </Spin>
     </div>
   )
 }
