@@ -1,15 +1,17 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import datetime
+from typing import TypeVar, Generic
+
+
+T = TypeVar('T')
+
 
 class BaseResponse(BaseModel):
     id: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-from typing import TypeVar, Generic
-
-T = TypeVar('T')
 
 class PaginatedResponse(BaseModel, Generic[T]):
     items: List[T]
@@ -17,6 +19,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page: int
     page_size: int
     total_pages: int
+
 
 class SearchParams(BaseModel):
     page: int = Field(1, ge=1)

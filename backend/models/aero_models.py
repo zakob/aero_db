@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
-from datetime import date
+from typing import Optional
+from datetime import date as type_date
 from .base import BaseResponse
 
 # Source models
@@ -61,13 +61,13 @@ class GeometryResponse(BaseResponse):
 # Report models
 class ReportCreate(BaseModel):
     name: str
-    date: date
+    date: type_date
     path_to_report: Optional[str] = None
     id_people: Optional[int] = None
 
 class ReportResponse(BaseResponse):
     name: str
-    date: date
+    date: type_date
     path_to_report: Optional[str] = None
     id_people: Optional[int] = None
 
@@ -84,7 +84,7 @@ class StartCreate(BaseModel):
     type: Optional[str] = Field(None, max_length=45)
     mach: Optional[float] = None
     reynolds_number: Optional[float] = None
-    date: Optional[date] = None
+    date: Optional[type_date] = None
 
 class StartResponse(BaseResponse):
     id_source: int
@@ -98,7 +98,7 @@ class StartResponse(BaseResponse):
     type: Optional[str] = None
     mach: Optional[float] = None
     reynolds_number: Optional[float] = None
-    date: Optional[date] = None
+    date: Optional[type_date] = None
 
 # Base (Conditions) models
 class BaseCreate(BaseModel):
