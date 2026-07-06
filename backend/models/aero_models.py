@@ -9,10 +9,8 @@ class SourceCreate(BaseModel):
     description: Optional[str] = None
     remark: Optional[str] = None
 
-class SourceUpdate(BaseModel):
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    remark: Optional[str] = None
+class SourceUpdate(SourceCreate):
+    ...
 
 class SourceResponse(BaseResponse):
     name: str
@@ -25,6 +23,9 @@ class ObjectCreate(BaseModel):
     photo: Optional[str] = None
     description: Optional[str] = None
 
+class ObjectUpdate(ObjectCreate):
+    ...
+
 class ObjectResponse(BaseResponse):
     name: str
     photo: Optional[str] = None
@@ -35,6 +36,9 @@ class PeopleCreate(BaseModel):
     first_name: str = Field(..., max_length=45)
     second_name: str = Field(..., max_length=45)
     patronymic: Optional[str] = Field(None, max_length=45)
+
+class PeopleUpdate(PeopleCreate):
+    ...
 
 class PeopleResponse(BaseResponse):
     first_name: str
@@ -50,6 +54,9 @@ class GeometryCreate(BaseModel):
     charateristic_length: Optional[float] = None
     producer: Optional[str] = Field(None, max_length=128)
 
+class GeometryUpdate(GeometryCreate):
+    ...
+
 class GeometryResponse(BaseResponse):
     path_to_geometry: str
     name: str
@@ -64,6 +71,9 @@ class ReportCreate(BaseModel):
     date: type_date
     path_to_report: Optional[str] = None
     id_people: Optional[int] = None
+
+class ReportUpdate(ReportCreate):
+    ...
 
 class ReportResponse(BaseResponse):
     name: str
