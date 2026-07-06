@@ -1,13 +1,22 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import (
+    APIRouter,
+    File,
+    UploadFile,
+    HTTPException,
+    Depends
+)
 from typing import List, Optional
 from backend.models.aero_models import (
-    StartCreate, StartResponse, 
+    ObjectCreate, SourceCreate, StartCreate, StartResponse, 
     BaseCreate, BaseResponse,
     TotalAdhCreate, TotalAdhResponse,
     AerodynamicDataView
 )
 from backend.models.base import PaginatedResponse, SearchParams
 from backend.database.database import db
+from backend.routes.sources import create_source
+from backend.routes.objects import create_object
+from backend.staff.parse_aero_csv import parse_content_csv
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
@@ -247,3 +256,61 @@ async def get_statistics():
     stats['mach_range'] = dict(mach_stats) if mach_stats else {}
     
     return stats
+
+
+@router.post("/import_data_from_csv", response_model=bool)
+async def import_data_from_csv(file: UploadFile = File(...)):
+    try:
+        # Читаем содержимое файла
+        content = await file.read()
+
+        # Проверяем размер файла (например, не более 10 МБ)
+        if len(content) > 10 * 1024 * 1024:
+            raise HTTPException(
+                status_code=413,
+                detail="Файл слишком большой. Максимальный размер: 10 МБ"
+            )
+
+        # Декодируем содержимое
+        text_content = content.decode("utf-8")
+
+        metadata, data = parse_content_csv(text_content)
+
+        print("metadata:\n", metadata)
+        print("data:\n", data)
+
+        source = await create_source(
+            source=SourceCreate(
+                ...
+            )
+        )
+
+        object = await create_object(
+            object=ObjectCreate(
+                ...
+            )
+        )
+
+        # TODO: geometry, report и подумать мб report сделать необязательным ...
+
+        start = await create_start(
+            start=StartCreate(
+                ...
+            )
+        )
+
+        # Логируем информацию о файле
+        print(f"Файл: {file.filename}, Размер: {len(content)} байт, Кодировка: utf-8")
+
+        return True
+
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Файл не является текстовым или имеет неподдерживаемую кодировку"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при обработке файла: {str(e)}"
+        )
