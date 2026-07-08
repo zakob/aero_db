@@ -5,7 +5,13 @@ import uvicorn
 
 from backend.config import settings
 from backend.database.database import db
-from backend.routes import sources, experiments
+from backend.routes import (
+    experiments,
+    geometries,
+    objects,
+    reports,
+    sources,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,8 +41,11 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(sources.router, prefix=settings.API_PREFIX)
 app.include_router(experiments.router, prefix=settings.API_PREFIX)
+app.include_router(geometries.router, prefix=settings.API_PREFIX)
+app.include_router(objects.router, prefix=settings.API_PREFIX)
+app.include_router(reports.router, prefix=settings.API_PREFIX)
+app.include_router(sources.router, prefix=settings.API_PREFIX)
 
 # Health check endpoint
 @app.get("/")

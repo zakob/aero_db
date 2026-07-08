@@ -38,7 +38,7 @@ async def get_objects(params: SearchParams = Depends()):
         total_pages=(total + params.page_size - 1) // params.page_size
     )
 
-@router.get("/{source_id}", response_model=ObjectResponse)
+@router.get("/{object_id}", response_model=ObjectResponse)
 async def get_object(object_id: int):
     """Get a specific object by ID"""
     query = "SELECT * FROM aero_db.object WHERE id = $1"
@@ -70,8 +70,8 @@ async def create_object(object: ObjectCreate):
             raise HTTPException(status_code=400, detail="Object with this name already exists")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/{source_id}", response_model=ObjectResponse)
-async def update_source(object_id: int, object: ObjectUpdate):
+@router.put("/{object_id}", response_model=ObjectResponse)
+async def update_object(object_id: int, object: ObjectUpdate):
     """Update an existing object"""
     # Check if source exists
     check_query = "SELECT id FROM aero_db.object WHERE id = $1"
@@ -89,7 +89,7 @@ async def update_source(object_id: int, object: ObjectUpdate):
         values.append(object.name)
         index += 1
     if object.photo is not None:
-        updates.append(f"object = ${index}")
+        updates.append(f"photo = ${index}")
         values.append(object.photo)
         index += 1
     if object.description is not None:
@@ -102,7 +102,7 @@ async def update_source(object_id: int, object: ObjectUpdate):
     
     values.append(object_id)
     query = f"""
-        UPDATE aero_db.source 
+        UPDATE aero_db.object
         SET {', '.join(updates)}
         WHERE id = ${index}
         RETURNING *
@@ -113,12 +113,12 @@ async def update_source(object_id: int, object: ObjectUpdate):
         return ObjectResponse(**dict(result))
     except Exception as e:
         if "unique constraint" in str(e).lower():
-            raise HTTPException(status_code=400, detail="Source with this name already exists")
+            raise HTTPException(status_code=400, detail="Object with this name already exists")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/{source_id}")
-async def delete_source(object_id: int):
-    """Delete a source"""
+@router.delete("/{object_id}")
+async def delete_object(object_id: int):
+    """Delete a object"""
     query = "DELETE FROM aero_db.object WHERE id = $1 RETURNING id"
     result = await db.fetchrow(query, object_id)
     
