@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS "start" (
   id_object_version INT,
   id_geometry INT NOT NULL,
   id_geometry_version INT,
-  id_report INT NOT NULL,
+  id_report INT,
   id_report_version INT,
   type VARCHAR(45),
   mach FLOAT,

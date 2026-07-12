@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import date as type_date
-from .base import BaseResponse
+from .base import CommonResponse
 
 # Source models
 class SourceCreate(BaseModel):
@@ -12,7 +12,7 @@ class SourceCreate(BaseModel):
 class SourceUpdate(SourceCreate):
     ...
 
-class SourceResponse(BaseResponse):
+class SourceResponse(CommonResponse):
     name: str
     description: Optional[str] = None
     remark: Optional[str] = None
@@ -26,7 +26,7 @@ class ObjectCreate(BaseModel):
 class ObjectUpdate(ObjectCreate):
     ...
 
-class ObjectResponse(BaseResponse):
+class ObjectResponse(CommonResponse):
     name: str
     photo: Optional[str] = None
     description: Optional[str] = None
@@ -40,7 +40,7 @@ class PeopleCreate(BaseModel):
 class PeopleUpdate(PeopleCreate):
     ...
 
-class PeopleResponse(BaseResponse):
+class PeopleResponse(CommonResponse):
     first_name: str
     second_name: str
     patronymic: Optional[str] = None
@@ -57,7 +57,7 @@ class GeometryCreate(BaseModel):
 class GeometryUpdate(GeometryCreate):
     ...
 
-class GeometryResponse(BaseResponse):
+class GeometryResponse(CommonResponse):
     path_to_geometry: str
     name: str
     id_people: Optional[int] = None
@@ -75,7 +75,7 @@ class ReportCreate(BaseModel):
 class ReportUpdate(ReportCreate):
     ...
 
-class ReportResponse(BaseResponse):
+class ReportResponse(CommonResponse):
     name: str
     date: type_date
     path_to_report: Optional[str] = None
@@ -89,21 +89,21 @@ class StartCreate(BaseModel):
     id_object_version: Optional[int] = None
     id_geometry: int
     id_geometry_version: Optional[int] = None
-    id_report: int
+    id_report: Optional[int] = None
     id_report_version: Optional[int] = None
     type: Optional[str] = Field(None, max_length=45)
     mach: Optional[float] = None
     reynolds_number: Optional[float] = None
     date: Optional[type_date] = None
 
-class StartResponse(BaseResponse):
+class StartResponse(CommonResponse):
     id_source: int
     id_source_version: Optional[int] = None
     id_object: int
     id_object_version: Optional[int] = None
     id_geometry: int
     id_geometry_version: Optional[int] = None
-    id_report: int
+    id_report: Optional[int] = None
     id_report_version: Optional[int] = None
     type: Optional[str] = None
     mach: Optional[float] = None
@@ -118,7 +118,7 @@ class BaseCreate(BaseModel):
     alpha_p: Optional[float] = None
     phi_p: Optional[float] = None
 
-class BaseResponse(BaseResponse):
+class BaseResponse(CommonResponse):
     id_start: int
     alpha: Optional[float] = None
     beta: Optional[float] = None

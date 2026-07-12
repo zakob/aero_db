@@ -7,7 +7,7 @@ from typing import TypeVar, Generic
 T = TypeVar('T')
 
 
-class BaseResponse(BaseModel):
+class CommonResponse(BaseModel):
     id: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

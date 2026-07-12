@@ -7,15 +7,22 @@ from fastapi import (
 )
 from typing import List, Optional
 from backend.models.aero_models import (
-    ObjectCreate, SourceCreate, StartCreate, StartResponse, 
-    BaseCreate, BaseResponse,
-    TotalAdhCreate, TotalAdhResponse,
+    # ObjectCreate,
+    GeometryCreate,
+    SourceCreate,
+    StartCreate,
+    StartResponse,
+    BaseCreate,
+    BaseResponse,
+    TotalAdhCreate,
+    TotalAdhResponse,
     AerodynamicDataView
 )
 from backend.models.base import PaginatedResponse, SearchParams
 from backend.database.database import db
 from backend.routes.sources import create_source
-from backend.routes.objects import create_object
+# from backend.routes.objects import create_object
+from backend.routes.geometries import create_geometry
 from backend.staff.parse_aero_csv import parse_content_csv
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
@@ -39,7 +46,14 @@ async def get_starts(params: SearchParams = Depends()):
         LEFT JOIN aero_db.report rpt ON s.id_report = rpt.id
     """
     
-    count_query = "SELECT COUNT(*) FROM aero_db.start"
+    count_query = """
+        SELECT COUNT(*)
+        FROM aero_db.start s
+        LEFT JOIN aero_db.source src ON s.id_source = src.id
+        LEFT JOIN aero_db.object obj ON s.id_object = obj.id
+        LEFT JOIN aero_db.geometry geo ON s.id_geometry = geo.id
+        LEFT JOIN aero_db.report rpt ON s.id_report = rpt.id
+    """
     
     if params.search:
         where_clause = """
@@ -49,7 +63,7 @@ async def get_starts(params: SearchParams = Depends()):
                OR rpt.name ILIKE $1
         """
         search_term = f"%{params.search}%"
-        total = await db.fetchval(count_query + where_clause.replace("WHERE", ""), search_term)
+        total = await db.fetchval(count_query + where_clause, search_term)
         query += where_clause
         query += f" ORDER BY s.{params.sort_by or 'id'} {params.sort_order or 'DESC'}"
         query += " LIMIT $2 OFFSET $3"
@@ -259,7 +273,10 @@ async def get_statistics():
 
 
 @router.post("/import_data_from_csv", response_model=bool)
-async def import_data_from_csv(file: UploadFile = File(...)):
+async def import_data_from_csv(
+    object_id: int,
+    file: UploadFile = File(...)
+):
     try:
         # Читаем содержимое файла
         content = await file.read()
@@ -281,13 +298,42 @@ async def import_data_from_csv(file: UploadFile = File(...)):
 
         source = await create_source(
             source=SourceCreate(
-                ...
+                name=metadata["Source"],
+                description=metadata.get("version", None),
+                remark=metadata.get("Tipe", None)
             )
         )
 
-        object = await create_object(
-            object=ObjectCreate(
-                ...
+        # object = await create_object(
+        #     object=ObjectCreate(
+        #         ...
+        #     )
+        # )
+
+        L = metadata.get("L", None)
+        if L:
+            try:
+                L = float(L)
+            except Exception:
+                L = None
+        else:
+            L = None
+
+        S = metadata.get("S", None)
+        if S:
+            try:
+                S = float(S)
+            except Exception:
+                S = None
+        else:
+            S = None
+
+        geometry = await create_geometry(
+            geometry=GeometryCreate(
+                path_to_geometry="",
+                name=metadata.get("Geometry", ""),
+                charateristic_area=S,
+                charateristic_length=L
             )
         )
 
@@ -295,7 +341,12 @@ async def import_data_from_csv(file: UploadFile = File(...)):
 
         start = await create_start(
             start=StartCreate(
-                ...
+                id_source=source.id,
+                id_object=object_id,
+                id_geometry=geometry.id,
+                mach=metadata.get("M", None),
+                reynolds_number=metadata.get("Re_L", None),
+                # date=metadata.get("Date", None)
             )
         )
 
