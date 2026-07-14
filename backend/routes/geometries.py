@@ -56,6 +56,8 @@ async def create_geometry(geometry: GeometryCreate):
         INSERT INTO aero_db.geometry
         (name, path_to_geometry, id_people, charateristic_area, charateristic_length, producer)
         VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (name)
+        DO NOTHING
         RETURNING *
     """
     try:
@@ -68,10 +70,14 @@ async def create_geometry(geometry: GeometryCreate):
             geometry.charateristic_length,
             geometry.producer
         )
+        if result is None:
+            results = await get_geometries(params=SearchParams(search=geometry.name))
+            result = results.items[0].model_dump()
+            result["error_msg"] = "already exists"
         return GeometryResponse(**dict(result))
     except Exception as e:
-        if "unique constraint" in str(e).lower():
-            raise HTTPException(status_code=400, detail="Geometry with this name already exists")
+        # if "unique constraint" in str(e).lower():
+        #     raise HTTPException(status_code=400, detail="Geometry with this name already exists")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/{geometry_id}", response_model=GeometryResponse)

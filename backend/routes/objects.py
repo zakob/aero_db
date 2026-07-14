@@ -55,6 +55,8 @@ async def create_object(object: ObjectCreate):
     query = """
         INSERT INTO aero_db.object (name, photo, description)
         VALUES ($1, $2, $3)
+        ON CONFLICT (name)
+        DO NOTHING
         RETURNING *
     """
     try:
@@ -64,10 +66,14 @@ async def create_object(object: ObjectCreate):
             object.photo,
             object.description
         )
+        if result is None:
+            results = await get_objects(params=SearchParams(search=object.name))
+            result = results.items[0].model_dump()
+            result["error_msg"] = "already exists"
         return ObjectResponse(**dict(result))
     except Exception as e:
-        if "unique constraint" in str(e).lower():
-            raise HTTPException(status_code=400, detail="Object with this name already exists")
+        # if "unique constraint" in str(e).lower():
+        #     raise HTTPException(status_code=400, detail="Object with this name already exists")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/{object_id}", response_model=ObjectResponse)

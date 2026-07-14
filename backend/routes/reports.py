@@ -55,6 +55,8 @@ async def create_report(report: ReportCreate):
     query = """
         INSERT INTO aero_db.report (name, date, path_to_report, id_people)
         VALUES ($1, $2, $3, $4)
+        ON CONFLICT (name)
+        DO NOTHING
         RETURNING *
     """
     try:
@@ -65,10 +67,14 @@ async def create_report(report: ReportCreate):
             report.path_to_report,
             report.id_people
         )
+        if result is None:
+            results = await get_reports(params=SearchParams(search=report.name))
+            result = results.items[0].model_dump()
+            result["error_msg"] = "already exists"
         return ReportResponse(**dict(result))
     except Exception as e:
-        if "unique constraint" in str(e).lower():
-            raise HTTPException(status_code=400, detail="Report with this name already exists")
+        # if "unique constraint" in str(e).lower():
+        #     raise HTTPException(status_code=400, detail="Report with this name already exists")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/{report_id}", response_model=ReportResponse)

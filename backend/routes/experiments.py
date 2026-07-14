@@ -294,7 +294,7 @@ async def import_data_from_csv(
         metadata, data = parse_content_csv(text_content)
 
         print("metadata:\n", metadata)
-        print("data:\n", data)
+        # print("data:\n", data)
 
         source = await create_source(
             source=SourceCreate(
@@ -303,6 +303,7 @@ async def import_data_from_csv(
                 remark=metadata.get("Tipe", None)
             )
         )
+        print(source)
 
         # object = await create_object(
         #     object=ObjectCreate(
@@ -346,9 +347,36 @@ async def import_data_from_csv(
                 id_geometry=geometry.id,
                 mach=metadata.get("M", None),
                 reynolds_number=metadata.get("Re_L", None),
-                # date=metadata.get("Date", None)
+                date=metadata.get("Date", None)
             )
         )
+
+        for d in data:
+            base = await create_base(
+                base=BaseCreate(
+                    id_start=start.id,
+                    alpha=d.get("Alpha"),
+                    beta=d.get("Beta"),
+                    alpha_p=d.get("Alpha_p"),
+                    phi_p=d.get("Fi")
+                )
+            )
+            adh = await create_total_adh(
+                total_adh=TotalAdhCreate(
+                    id_base=base.id,
+                    cx=d.get("Cx", 0),
+                    cy=d.get("Cy", 0),
+                    cz=d.get("Cz", 0),
+                    cxa=d.get("Cxa"),
+                    cya=d.get("Cya"),
+                    cza=d.get("Cza"),
+                    mx=d.get("mx", 0),
+                    my=d.get("my", 0),
+                    mz=d.get("mz", 0),
+                    k=d.get("K", 0)
+                )
+            )
+            print(f"adh: {adh}")
 
         # Логируем информацию о файле
         print(f"Файл: {file.filename}, Размер: {len(content)} байт, Кодировка: utf-8")

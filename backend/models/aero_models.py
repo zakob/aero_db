@@ -139,7 +139,7 @@ class TotalAdhCreate(BaseModel):
     mz: float
     k: float
 
-class TotalAdhResponse(BaseResponse):
+class TotalAdhResponse(CommonResponse):
     id_base: int
     cx: float
     cy: float

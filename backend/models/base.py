@@ -9,6 +9,7 @@ T = TypeVar('T')
 
 class CommonResponse(BaseModel):
     id: int
+    error_msg: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

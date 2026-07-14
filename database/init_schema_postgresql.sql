@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS geometry (
   charateristic_area FLOAT,
   charateristic_length FLOAT,
   producer VARCHAR(128),
+  CONSTRAINT geometry_name_unique UNIQUE (name),
   CONSTRAINT fk_geometry_people
     FOREIGN KEY (id_people)
     REFERENCES people (id)

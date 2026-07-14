@@ -19,6 +19,7 @@ Functions:
 
 import csv
 from collections import OrderedDict
+from datetime import datetime
 
 
 def parse_content_csv(content: str):
@@ -52,6 +53,15 @@ def parse_content_csv(content: str):
 
     if data_start is None:
         raise ValueError("No '<Start>' marker found in file")
+    
+    if "Date" in metadata:
+        mdate = metadata["Date"]
+        try:
+            mdate = datetime.strptime(mdate, "%d.%m.%Y")
+        except Exception as e:
+            print(e)
+            mdate = None
+        metadata["Date"] = mdate
 
     # header line
     header_line = lines[data_start]
