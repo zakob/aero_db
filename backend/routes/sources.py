@@ -69,14 +69,11 @@ async def create_source(source: SourceCreate):
         if result is None:
             results = await get_sources(params=SearchParams(search=source.name))
             result = results.items[0].model_dump()
-            print(result)
-            print(dict(result))
             result["error_msg"] = "already exists"
         return SourceResponse(**dict(result))
     except Exception as e:
         # if "unique constraint" in str(e).lower():
         #     raise HTTPException(status_code=400, detail="Source with this name already exists")
-        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/{source_id}", response_model=SourceResponse)

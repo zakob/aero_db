@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+import time
+
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
@@ -12,16 +14,18 @@ from backend.routes import (
     reports,
     sources,
 )
+from logger.setup import logger, logger_route
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: connect to database
     await db.connect()
-    print("Application started")
+    logger.info("Application started")
     yield
     # Shutdown: disconnect from database
     await db.disconnect()
-    print("Application stopped")
+    logger.info("Application stopped")
 
 # Create FastAPI app
 app = FastAPI(
@@ -67,10 +71,29 @@ async def health_check():
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
+
+# Middleware для логирования запросов
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+
+    # думаю время начала запроса не самый надежный идентификатор запроса, но пока сойдет
+
+    logger_route.info(f"Request: {start_time} : {request.method} {request.url.path}")
+
+    response: Response = await call_next(request)
+
+    process_time = time.time() - start_time
+    logger_route.info(f"Response: {start_time} : {response.status_code} - {process_time:.3f}s")
+
+    return response
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "backend.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True
+        reload=True,
+        log_config=None  # Отключаем встроенный логгер uvicorn
     )

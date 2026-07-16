@@ -25,6 +25,9 @@ from backend.routes.sources import create_source
 from backend.routes.geometries import create_geometry
 from backend.staff.parse_aero_csv import parse_content_csv
 
+from logger.setup import logger
+
+
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
 # Start (Experiment) endpoints
@@ -293,8 +296,8 @@ async def import_data_from_csv(
 
         metadata, data = parse_content_csv(text_content)
 
-        print("metadata:\n", metadata)
-        # print("data:\n", data)
+        logger.debug(f"metadata:\n{metadata}")
+        # logger.debug(f"data:\n{data}")
 
         source = await create_source(
             source=SourceCreate(
@@ -303,7 +306,6 @@ async def import_data_from_csv(
                 remark=metadata.get("Tipe", None)
             )
         )
-        print(source)
 
         # object = await create_object(
         #     object=ObjectCreate(
@@ -376,10 +378,10 @@ async def import_data_from_csv(
                     k=d.get("K", 0)
                 )
             )
-            print(f"adh: {adh}")
+            logger.debug(f"adh: {adh}")
 
         # Логируем информацию о файле
-        print(f"Файл: {file.filename}, Размер: {len(content)} байт, Кодировка: utf-8")
+        logger.debug(f"Файл: {file.filename}, Размер: {len(content)} байт, Кодировка: utf-8")
 
         return True
 
