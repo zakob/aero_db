@@ -38,7 +38,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -79,12 +79,15 @@ async def log_requests(request: Request, call_next):
 
     # думаю время начала запроса не самый надежный идентификатор запроса, но пока сойдет
 
-    logger_route.info(f"Request: {start_time} : {request.method} {request.url.path}")
+    logger_route.debug(f"Request: {start_time} {request.client.host}:{request.client.port}: {request.method} {request.url.path}")
 
     response: Response = await call_next(request)
 
     process_time = time.time() - start_time
-    logger_route.info(f"Response: {start_time} : {response.status_code} - {process_time:.3f}s")
+    logger_route.info(
+        f"Response: {start_time} {request.client.host}:{request.client.port}: "
+        f"{request.method} {request.url.path} {response.status_code} - {process_time:.3f}s"
+    )
 
     return response
 
