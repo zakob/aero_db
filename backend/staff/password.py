@@ -15,7 +15,7 @@ def hash_password(password: str) -> tuple:
     """
     salt = os.urandom(32)
     key = hashlib.pbkdf2_hmac(
-        'sha256',
+        "sha256",
         password.encode(),
         salt,
         600000,
@@ -38,7 +38,7 @@ def verify_password(password: str, salt_hex: str, key_hex: str) -> bool:
     """
     salt = bytes.fromhex(salt_hex)
     key = bytes.fromhex(key_hex)
-    new_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 600000, dklen=32)
+    new_key = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 600000, dklen=32)
 
     # БЕЗОПАСНОЕ сравнение - всегда выполняется за одинаковое время
     return hmac.compare_digest(new_key, key)
