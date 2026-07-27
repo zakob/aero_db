@@ -1,21 +1,20 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
-from typing import TypeVar, Generic
+from typing import Generic, TypeVar
 
+from pydantic import BaseModel, Field
 
 T = TypeVar('T')
 
 
 class CommonResponse(BaseModel):
     id: int
-    error_msg: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    error_msg: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
-    items: List[T]
+    items: list[T]
     total: int
     page: int
     page_size: int
@@ -25,6 +24,6 @@ class PaginatedResponse(BaseModel, Generic[T]):
 class SearchParams(BaseModel):
     page: int = Field(1, ge=1)
     page_size: int = Field(20, ge=1, le=100)
-    search: Optional[str] = None
-    sort_by: Optional[str] = None
-    sort_order: Optional[str] = "asc"
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = "asc"

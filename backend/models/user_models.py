@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel, Field
-from typing import Optional
+
 from .base import CommonResponse
 
 
@@ -8,7 +9,7 @@ class UserBase(BaseModel):
     email: str = Field(..., min_length=3, max_length=100)  # TODO: валидатор почты
     first_name: str = Field(..., min_length=3, max_length=100)
     last_name: str = Field(..., min_length=3, max_length=100)
-    middle_name: Optional[str] = Field(None, min_length=3, max_length=100)
+    middle_name: str | None = Field(None, min_length=3, max_length=100)
 
 
 class UserCreate(UserBase):
@@ -30,4 +31,4 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    email: str | None = None

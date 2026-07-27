@@ -1,10 +1,9 @@
-import asyncpg
-from typing import Optional
 from contextlib import asynccontextmanager
-from backend.config import settings
 
+import asyncpg
 from logger.setup import logger
 
+from backend.config import settings
 
 # TODO: нужно добавить поддержку транзакций,
 # чтобы была возможность релизовывать бизнес логику внутри транзакции
@@ -12,7 +11,7 @@ from logger.setup import logger
 
 class Database:
     def __init__(self):
-        self.pool: Optional[asyncpg.Pool] = None
+        self.pool: asyncpg.Pool | None = None
 
     async def connect(self):
         """Create a connection pool to the database"""

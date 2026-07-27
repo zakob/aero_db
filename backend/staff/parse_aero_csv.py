@@ -21,6 +21,8 @@ import csv
 from collections import OrderedDict
 from datetime import datetime
 
+from logger.setup import logger
+
 
 def parse_content_csv(content: str):
     """Parse aero CSV file with metadata and data.
@@ -59,7 +61,7 @@ def parse_content_csv(content: str):
         try:
             mdate = datetime.strptime(mdate, "%d.%m.%Y")
         except Exception as e:
-            print(e)
+            logger.error(e)
             mdate = None
         metadata["Date"] = mdate
 

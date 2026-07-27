@@ -1,38 +1,33 @@
-from fastapi import (
-    APIRouter,
-    File,
-    UploadFile,
-    HTTPException,
-    Depends
-)
-from typing import List, Optional
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from logger.setup import logger
+
+from backend.database.database import db
 from backend.models.aero_models import (
+    AerodynamicDataView,
+    BaseCreate,
+    BaseResponse,
     # ObjectCreate,
     GeometryCreate,
     SourceCreate,
     StartCreate,
     StartResponse,
-    BaseCreate,
-    BaseResponse,
     TotalAdhCreate,
     TotalAdhResponse,
-    AerodynamicDataView
 )
 from backend.models.base import PaginatedResponse, SearchParams
-from backend.database.database import db
-from backend.routes.sources import create_source
+
 # from backend.routes.objects import create_object
 from backend.routes.geometries import create_geometry
+from backend.routes.sources import create_source
 from backend.staff.parse_aero_csv import parse_content_csv
-
-from logger.setup import logger
-
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
 # Start (Experiment) endpoints
 @router.get("/starts", response_model=PaginatedResponse[StartResponse])
-async def get_starts(params: SearchParams = Depends()):
+async def get_starts(params: SearchParams = Depends()):  # noqa: B008
+# async def get_starts(params: SearchParams):
     """Get paginated list of experiments (starts)"""
     offset = (params.page - 1) * params.page_size
     
@@ -194,11 +189,11 @@ async def create_total_adh(total_adh: TotalAdhCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Aerodynamic data views
-@router.get("/aerodynamic-data", response_model=List[AerodynamicDataView])
+@router.get("/aerodynamic-data", response_model=list[AerodynamicDataView])
 async def get_aerodynamic_data(
-    object_id: Optional[int] = None,
-    min_mach: Optional[float] = None,
-    max_mach: Optional[float] = None
+    object_id: int | None = None,
+    min_mach: float | None = None,
+    max_mach: float | None = None
 ):
     """Get aerodynamic data for visualization"""
     query = """
@@ -393,5 +388,5 @@ async def import_data_from_csv(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Ошибка при обработке файла: {str(e)}"
+            detail=f"Ошибка при обработке файла: {e!s}"
         )

@@ -1,41 +1,43 @@
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import date as type_date
+
+from pydantic import BaseModel, Field
+
 from .base import CommonResponse
+
 
 # Source models
 class SourceCreate(BaseModel):
     name: str = Field(..., max_length=100)
-    description: Optional[str] = None
-    remark: Optional[str] = None
+    description: str | None = None
+    remark: str | None = None
 
 class SourceUpdate(SourceCreate):
     ...
 
 class SourceResponse(CommonResponse):
     name: str
-    description: Optional[str] = None
-    remark: Optional[str] = None
+    description: str | None = None
+    remark: str | None = None
 
 # Object models
 class ObjectCreate(BaseModel):
     name: str = Field(..., max_length=100)
-    photo: Optional[str] = None
-    description: Optional[str] = None
+    photo: str | None = None
+    description: str | None = None
 
 class ObjectUpdate(ObjectCreate):
     ...
 
 class ObjectResponse(CommonResponse):
     name: str
-    photo: Optional[str] = None
-    description: Optional[str] = None
+    photo: str | None = None
+    description: str | None = None
 
 # People models
 class PeopleCreate(BaseModel):
     first_name: str = Field(..., max_length=45)
     second_name: str = Field(..., max_length=45)
-    patronymic: Optional[str] = Field(None, max_length=45)
+    patronymic: str | None = Field(None, max_length=45)
 
 class PeopleUpdate(PeopleCreate):
     ...
@@ -43,16 +45,16 @@ class PeopleUpdate(PeopleCreate):
 class PeopleResponse(CommonResponse):
     first_name: str
     second_name: str
-    patronymic: Optional[str] = None
+    patronymic: str | None = None
 
 # Geometry models
 class GeometryCreate(BaseModel):
     path_to_geometry: str
     name: str
-    id_people: Optional[int] = None
-    charateristic_area: Optional[float] = None
-    charateristic_length: Optional[float] = None
-    producer: Optional[str] = Field(None, max_length=128)
+    id_people: int | None = None
+    charateristic_area: float | None = None
+    charateristic_length: float | None = None
+    producer: str | None = Field(None, max_length=128)
 
 class GeometryUpdate(GeometryCreate):
     ...
@@ -60,17 +62,17 @@ class GeometryUpdate(GeometryCreate):
 class GeometryResponse(CommonResponse):
     path_to_geometry: str
     name: str
-    id_people: Optional[int] = None
-    charateristic_area: Optional[float] = None
-    charateristic_length: Optional[float] = None
-    producer: Optional[str] = None
+    id_people: int | None = None
+    charateristic_area: float | None = None
+    charateristic_length: float | None = None
+    producer: str | None = None
 
 # Report models
 class ReportCreate(BaseModel):
     name: str
     date: type_date
-    path_to_report: Optional[str] = None
-    id_people: Optional[int] = None
+    path_to_report: str | None = None
+    id_people: int | None = None
 
 class ReportUpdate(ReportCreate):
     ...
@@ -78,52 +80,52 @@ class ReportUpdate(ReportCreate):
 class ReportResponse(CommonResponse):
     name: str
     date: type_date
-    path_to_report: Optional[str] = None
-    id_people: Optional[int] = None
+    path_to_report: str | None = None
+    id_people: int | None = None
 
 # Start (Experiment) models
 class StartCreate(BaseModel):
     id_source: int
-    id_source_version: Optional[int] = None
+    id_source_version: int | None = None
     id_object: int
-    id_object_version: Optional[int] = None
+    id_object_version: int | None = None
     id_geometry: int
-    id_geometry_version: Optional[int] = None
-    id_report: Optional[int] = None
-    id_report_version: Optional[int] = None
-    type: Optional[str] = Field(None, max_length=45)
-    mach: Optional[float] = None
-    reynolds_number: Optional[float] = None
-    date: Optional[type_date] = None
+    id_geometry_version: int | None = None
+    id_report: int | None = None
+    id_report_version: int | None = None
+    type: str | None = Field(None, max_length=45)
+    mach: float | None = None
+    reynolds_number: float | None = None
+    date: type_date | None = None
 
 class StartResponse(CommonResponse):
     id_source: int
-    id_source_version: Optional[int] = None
+    id_source_version: int | None = None
     id_object: int
-    id_object_version: Optional[int] = None
+    id_object_version: int | None = None
     id_geometry: int
-    id_geometry_version: Optional[int] = None
-    id_report: Optional[int] = None
-    id_report_version: Optional[int] = None
-    type: Optional[str] = None
-    mach: Optional[float] = None
-    reynolds_number: Optional[float] = None
-    date: Optional[type_date] = None
+    id_geometry_version: int | None = None
+    id_report: int | None = None
+    id_report_version: int | None = None
+    type: str | None = None
+    mach: float | None = None
+    reynolds_number: float | None = None
+    date: type_date | None = None
 
 # Base (Conditions) models
 class BaseCreate(BaseModel):
     id_start: int
-    alpha: Optional[float] = None
-    beta: Optional[float] = None
-    alpha_p: Optional[float] = None
-    phi_p: Optional[float] = None
+    alpha: float | None = None
+    beta: float | None = None
+    alpha_p: float | None = None
+    phi_p: float | None = None
 
 class BaseResponse(CommonResponse):
     id_start: int
-    alpha: Optional[float] = None
-    beta: Optional[float] = None
-    alpha_p: Optional[float] = None
-    phi_p: Optional[float] = None
+    alpha: float | None = None
+    beta: float | None = None
+    alpha_p: float | None = None
+    phi_p: float | None = None
 
 # Total aerodynamic coefficients models
 class TotalAdhCreate(BaseModel):
@@ -131,9 +133,9 @@ class TotalAdhCreate(BaseModel):
     cx: float
     cy: float
     cz: float
-    cxa: Optional[float] = None
-    cya: Optional[float] = None
-    cza: Optional[float] = None
+    cxa: float | None = None
+    cya: float | None = None
+    cza: float | None = None
     mx: float
     my: float
     mz: float
@@ -144,9 +146,9 @@ class TotalAdhResponse(CommonResponse):
     cx: float
     cy: float
     cz: float
-    cxa: Optional[float] = None
-    cya: Optional[float] = None
-    cza: Optional[float] = None
+    cxa: float | None = None
+    cya: float | None = None
+    cza: float | None = None
     mx: float
     my: float
     mz: float
@@ -155,14 +157,14 @@ class TotalAdhResponse(CommonResponse):
 # Drainage points models
 class DrainagePointCreate(BaseModel):
     id_geometry: int
-    n: Optional[int] = None
+    n: int | None = None
     x: float
     y: float
     z: float
 
 class DrainagePointResponse(BaseResponse):
     id_geometry: int
-    n: Optional[int] = None
+    n: int | None = None
     x: float
     y: float
     z: float
@@ -182,10 +184,10 @@ class PressureCoeffResponse(BaseResponse):
 class AerodynamicDataView(BaseModel):
     start_id: int
     base_id: int
-    mach: Optional[float]
-    reynolds_number: Optional[float]
-    alpha_p: Optional[float]
-    phi_p: Optional[float]
+    mach: float | None
+    reynolds_number: float | None
+    alpha_p: float | None
+    phi_p: float | None
     cx: float
     cy: float
     mz: float

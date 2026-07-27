@@ -4,7 +4,6 @@ import logging.config
 
 from config import settings
 
-
 logger_config = None
 
 

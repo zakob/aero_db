@@ -1,6 +1,6 @@
 import hashlib
-import os
 import hmac
+import os
 
 
 def hash_password(password: str) -> tuple:
