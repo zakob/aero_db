@@ -7,7 +7,7 @@ from backend.models.base import PaginatedResponse, SearchParams
 router = APIRouter(prefix="/objects", tags=["objects"])
 
 @router.get("/", response_model=PaginatedResponse[ObjectResponse])
-async def get_objects(params: SearchParams = Depends()):
+async def get_objects(params: SearchParams = Depends()):  # noqa: B008
     """Get paginated list of objects"""
     offset = (params.page - 1) * params.page_size
     

@@ -7,7 +7,7 @@ from backend.models.base import PaginatedResponse, SearchParams
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/", response_model=PaginatedResponse[ReportResponse])
-async def get_reports(params: SearchParams = Depends()):
+async def get_reports(params: SearchParams = Depends()):  # noqa: B008
     """Get paginated list of reports"""
     offset = (params.page - 1) * params.page_size
     

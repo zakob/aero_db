@@ -7,7 +7,7 @@ from backend.models.base import PaginatedResponse, SearchParams
 router = APIRouter(prefix="/sources", tags=["sources"])
 
 @router.get("/", response_model=PaginatedResponse[SourceResponse])
-async def get_sources(params: SearchParams = Depends()):
+async def get_sources(params: SearchParams = Depends()):  # noqa: B008
     """Get paginated list of sources"""
     offset = (params.page - 1) * params.page_size
     

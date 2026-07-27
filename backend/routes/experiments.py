@@ -273,7 +273,7 @@ async def get_statistics():
 @router.post("/import_data_from_csv", response_model=bool)
 async def import_data_from_csv(
     object_id: int,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...)  # noqa: B008
 ):
     try:
         # Читаем содержимое файла

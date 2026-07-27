@@ -7,7 +7,7 @@ from backend.models.base import PaginatedResponse, SearchParams
 router = APIRouter(prefix="/geometries", tags=["geometries"])
 
 @router.get("/", response_model=PaginatedResponse[GeometryResponse])
-async def get_geometries(params: SearchParams = Depends()):
+async def get_geometries(params: SearchParams = Depends()):  # noqa: B008
     """Get paginated list of geometries"""
     offset = (params.page - 1) * params.page_size
     

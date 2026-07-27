@@ -59,7 +59,7 @@ def parse_content_csv(content: str):
     if "Date" in metadata:
         mdate = metadata["Date"]
         try:
-            mdate = datetime.strptime(mdate, "%d.%m.%Y")
+            mdate = datetime.strptime(mdate, "%d.%m.%Y")  # noqa: DTZ007
         except Exception as e:
             logger.error(e)
             mdate = None
