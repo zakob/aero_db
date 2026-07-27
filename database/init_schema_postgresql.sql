@@ -494,6 +494,31 @@ COMMENT ON COLUMN center_mass.date_end IS '';
 
 
 -- -----------------------------------------------------
+-- Table aero_db.users
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_salt VARCHAR(64) NOT NULL,   -- соль в hex (32 байта = 64 символа)
+  password_hash VARCHAR(64) NOT NULL,   -- хэш в hex (32 байта = 64 символа)
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100),
+  middle_name VARCHAR(100),
+  is_suoeruser BOOLEAN DEFAULT FALSE,
+  is_checked BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE users IS 'Пользователи';
+COMMENT ON COLUMN users.email IS 'Электронная почта';
+COMMENT ON COLUMN users.password_salt IS 'Хэш соли';
+COMMENT ON COLUMN users.password_hash IS 'Хэш пароля';
+COMMENT ON COLUMN users.first_name IS 'Имя';
+COMMENT ON COLUMN users.last_name IS 'Фамилия';
+COMMENT ON COLUMN users.middle_name IS 'Отчество';
+
+
+-- -----------------------------------------------------
 -- View aero_db.source_version_view_1
 -- -----------------------------------------------------
 CREATE OR REPLACE VIEW source_version_view_1 AS
