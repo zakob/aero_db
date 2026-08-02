@@ -61,13 +61,14 @@ services:
       WATCHPACK_POLLING: "true"
     volumes:
       - ./frontend:/app
-      # - /app/node_modules
     depends_on:
       - backend
     networks:
       - aero_network_dev
     stdin_open: true
     tty: true
+    command: >
+      sh -c "npm install && npm run dev -- --host 0.0.0.0 --logLevel info --clearScreen false"
 
 volumes:
   postgres_data_dev:
