@@ -8,10 +8,12 @@ services:
     container_name: aero_db_postgres
     ports:
       - "5432:5432"
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: aero_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init_schema_postgresql.sql:/docker-entrypoint-initdb.d/init_schema_postgresql.sql
@@ -32,17 +34,9 @@ services:
     container_name: aero_db_backend
     ports:
       - "8000:8000"
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: aero_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      SECRET_KEY: your-secret-key-here-change-in-production
-      DEBUG: "True"
-      CORS_ORIGINS: "http://localhost:3000,http://frontend:3000"
     volumes:
       - ./backend:/app/backend
+      - ./.env:/app/.env
     depends_on:
       postgres:
         condition: service_healthy

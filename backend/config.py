@@ -9,9 +9,6 @@ class Settings(BaseSettings):
     DB_USER: str = "postgres"
     DB_PASSWORD: str = "postgres"
 
-    # Database URL for asyncpg
-    DATABASE_URL: str = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
     # Application settings
     APP_TITLE: str = "Aero Database API"
     APP_VERSION: str = "1.0.0"
@@ -28,7 +25,7 @@ class Settings(BaseSettings):
     LOG_LVL: str = "DEBUG"
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
         env_file_encoding = "utf-8"
 
 
