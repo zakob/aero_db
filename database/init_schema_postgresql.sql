@@ -506,7 +506,8 @@ CREATE TABLE IF NOT EXISTS users (
   middle_name VARCHAR(100),
   is_suoeruser BOOLEAN DEFAULT FALSE,
   is_checked BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
 COMMENT ON TABLE users IS 'Пользователи';
@@ -517,6 +518,27 @@ COMMENT ON COLUMN users.first_name IS 'Имя';
 COMMENT ON COLUMN users.last_name IS 'Фамилия';
 COMMENT ON COLUMN users.middle_name IS 'Отчество';
 
+
+-- -----------------------------------------------------
+-- Table aero_db.refresh_tokens
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id SERIAL PRIMARY KEY,
+  id_user INT NOT NULL,
+  token TEXT,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  revoked BOOLEAN DEFAULT FALSE,
+  CONSTRAINT fk_refresh_token_user
+    FOREIGN KEY (id_user)
+    REFERENCES object (id)
+    ON DELETE CASCADE
+);
+
+-- Индексы для оптимизации
+CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 
 -- -----------------------------------------------------
 -- View aero_db.source_version_view_1
