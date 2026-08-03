@@ -1,3 +1,5 @@
+.codeassistant
+.codeassistantmodes
 .vscode
 __pycache__
 dist/
