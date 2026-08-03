@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.database.database import db
-from backend.models.aero_models import SourceCreate, SourceResponse, SourceUpdate
+from backend.models.aero import SourceCreate, SourceResponse, SourceUpdate
 from backend.models.base import PaginatedResponse, SearchParams
 
 router = APIRouter(prefix="/sources", tags=["sources"])

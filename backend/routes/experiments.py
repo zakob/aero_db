@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from logger.setup import logger
 
 from backend.database.database import db
-from backend.models.aero_models import (
+from backend.models.aero import (
     AerodynamicDataView,
     BaseCreate,
     BaseResponse,
